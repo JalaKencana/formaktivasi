@@ -531,8 +531,7 @@
             showMessage('Mengirim...', 'info');
 
             // URL aplikasi web Google Apps Script Anda yang sebenarnya
-            // Ini adalah URL yang baru Anda berikan: https://script.google.com/macros/s/AKfycby3KPlwKSyxSPxen8C30GNnhBZuaReThCghNgnHLlYT0QZ2QuuiZn-GMaSqdnS4A6xi/exec
-            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3KPlwKSyxSPxen8C30GNnhBZuaReThCghNgnHLlYT0QZ2QuuiZn-GMaSqdnS4A6xi/exec'; 
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMV8intd8MB-0vvWySSFD9wrWQLQEPRR_WyNfBkojrc_t8J7TayD9DfeUjo6Uqv0io/exec'; 
 
             // Buat objek FormData untuk pengiriman
             const formData = new FormData();
@@ -588,29 +587,48 @@
             formData.append('frontlinerName', document.getElementById('frontliner_name').value);
 
             try {
+                console.log('Mencuba menghantar data formulir ke:', APPS_SCRIPT_URL);
+                console.log('Payload yang dihantar:', Object.fromEntries(formData));
+
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'cors', 
+                    credentials: 'omit', // Tambahan penting untuk CORS
                     body: JSON.stringify(Object.fromEntries(formData)), // Mengubah FormData menjadi objek JSON
                     headers: {
                         'Content-Type': 'application/json' // Menentukan Content-Type sebagai JSON
                     }
                 });
 
+                console.log('Respons diterima:', response);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Ralat HTTP:', response.status, response.statusText, 'Badan respons:', errorText);
+                    showMessage(`Ralat saat menghantar formulir: ${response.status} ${response.statusText}`, 'error');
+                    return; // Hentikan pelaksanaan jika respons tidak OK
+                }
+
                 const result = await response.json(); 
+                console.log('Hasil JSON yang diparsing:', result);
 
                 if (result.success) {
                     showMessage(result.message, 'success');
                     this.reset();
                     clearHighlights();
                 } else {
-                    showMessage(result.message || 'Terjadi kesalahan saat mengirim formulir.', 'error');
-                    console.error('Struktur respons API tidak terduga:', result);
+                    showMessage(result.message || 'Terjadi kesalahan saat menghantar formulir.', 'error');
+                    console.error('Struktur respons API tidak terduga atau success: false:', result);
                 }
 
             } catch (error) {
-                console.error('Error submitting form:', error);
-                showMessage('Error saat mengirim formulir. Silakan coba lagi.', 'error');
+                console.error('Ralat menghantar formulir (isu rangkaian atau parsing):', error);
+                // Periksa jika ini adalah ralat berkaitan rangkaian
+                if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                    showMessage('Ralat sambungan: Gagal menyambung ke pelayan. Periksa sambungan internet anda atau cuba lagi nanti.', 'error');
+                } else {
+                    showMessage('Ralat saat menghantar formulir. Sila cuba lagi.', 'error');
+                }
             }
         });
 
@@ -637,7 +655,7 @@
             const finalBrand = brand === '__other_option__' ? otherBrand : brand;
 
             if (!finalBrand || !type) {
-                showMessage('Silakan masukkan Merek dan Jenis Gawai untuk mendapatkan tips.', 'error');
+                showMessage('Sila masukkan Merek dan Jenis Gawai untuk mendapatkan tips.', 'error');
                 return;
             }
 
@@ -673,11 +691,11 @@
                     }).join('');
                     document.getElementById('tipsContent').innerHTML = `<ul>${formattedTips}</ul>`;
                 } else {
-                    document.getElementById('tipsContent').innerHTML = '<p>Maaf, tidak dapat menjana tips penjagaan gawai. Silakan coba lagi.</p>';
+                    document.getElementById('tipsContent').innerHTML = '<p>Maaf, tidak dapat menjana tips penjagaan gawai. Sila cuba lagi.</p>';
                     console.error('Struktur respons API tidak terduga:', result);
                 }
             } catch (error) {
-                document.getElementById('tipsContent').innerHTML = '<p>Kesalahan menjana tips penjagaan gawai. Silakan periksa sambungan internet Anda.</p>';
+                document.getElementById('tipsContent').innerHTML = '<p>Kesalahan menjana tips penjagaan gawai. Sila periksa sambungan internet anda.</p>';
                 console.error('Error fetching tips:', error);
             }
         });
@@ -692,7 +710,7 @@
             const finalBrand = brand === '__other_option__' ? otherBrand : brand;
 
             if (!finalBrand || !type) {
-                showMessage('Silakan masukkan Merek dan Jenis Gawai untuk mendapatkan ringkasan garansi.', 'error');
+                showMessage('Sila masukkan Merek dan Jenis Gawai untuk mendapatkan ringkasan garansi.', 'error');
                 return;
             }
 
@@ -728,11 +746,11 @@
                     }).join('');
                     document.getElementById('warrantyContent').innerHTML = `<ul>${formattedSummary}</ul>`;
                 } else {
-                    document.getElementById('warrantyContent').innerHTML = '<p>Maaf, tidak dapat menjana ringkasan garansi. Silakan coba lagi.</p>';
+                    document.getElementById('warrantyContent').innerHTML = '<p>Maaf, tidak dapat menjana ringkasan garansi. Sila cuba lagi.</p>';
                     console.error('Struktur respons API tidak terduga:', result);
                 }
             } catch (error) {
-                document.getElementById('warrantyContent').innerHTML = '<p>Kesalahan menjana ringkasan garansi. Silakan periksa sambungan internet Anda.</p>';
+                document.getElementById('warrantyContent').innerHTML = '<p>Kesalahan menjana ringkasan garansi. Sila periksa sambungan internet anda.</p>';
                 console.error('Error fetching warranty summary:', error);
             }
         });
