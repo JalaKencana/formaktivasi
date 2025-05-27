@@ -105,20 +105,18 @@
         document.getElementById('continueButton').addEventListener('click', function() {
             const selectedFrontliner = document.getElementById('frontlinerSelect').value;
             if (selectedFrontliner) {
-                // GANTI DENGAN URL PUBLIK DARI FORMULIR UTAMA ANDA (misalnya, form.html)
-                // Contoh: 'https://your-github-username.github.io/my-form-project/form.html'
-                const formUrl = 'URL_PUBLIK_FORMULIR_UTAMA_ANDA_DI_SINI'; 
+                // URL publik formulir utama Anda
+                const formUrl = 'https://jalakencana.github.io/formaktivasi/form.html';
                 
                 window.location.href = `${formUrl}?frontliner=${selectedFrontliner}`;
             } else {
                 // Menggunakan modal kustom sebagai pengganti alert()
                 const messageBox = document.getElementById('messageBox');
                 if (!messageBox) {
-                    // Jika messageBox belum ada, buat satu (untuk pengujian atau fallback)
                     const tempMessageBox = document.createElement('div');
                     tempMessageBox.id = 'messageBox';
                     tempMessageBox.className = 'message-box show';
-                    tempMessageBox.style.backgroundColor = '#dc3545'; // Merah untuk error
+                    tempMessageBox.style.backgroundColor = '#dc3545';
                     tempMessageBox.textContent = 'Harap pilih nama frontliner terlebih dahulu.';
                     document.body.appendChild(tempMessageBox);
                     setTimeout(() => {
@@ -126,11 +124,9 @@
                         tempMessageBox.remove();
                     }, 3000);
                 } else {
-                    // Jika messageBox sudah ada, gunakan fungsi showMessage yang mungkin sudah didefinisikan
                     if (typeof showMessage === 'function') {
                         showMessage('Harap pilih nama frontliner terlebih dahulu.', 'error');
                     } else {
-                        // Fallback jika showMessage tidak ada
                         messageBox.textContent = 'Harap pilih nama frontliner terlebih dahulu.';
                         messageBox.className = 'message-box show';
                         messageBox.style.backgroundColor = '#dc3545';
