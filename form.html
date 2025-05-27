@@ -459,7 +459,6 @@
         };
 
         // JavaScript untuk efek hover peringkat bintang
-        // Pindahkan deklarasi variabel ke sini agar tidak terjadi deklarasi ganda
         const ratingContainer = document.getElementById('ratingContainer');
         const starLabels = ratingContainer.querySelectorAll('label');
         const starInputs = ratingContainer.querySelectorAll('input[type="radio"]');
@@ -519,7 +518,6 @@
             }
 
             // Inisialisasi tampilan berdasarkan tombol radio yang sudah dicentang (jika ada)
-            // Variabel ratingContainer, starLabels, dan starInputs sudah dideklarasikan di luar.
             const checkedInput = document.querySelector('input[name="penilaianPelayanan"]:checked'); 
             if (checkedInput) {
                 const checkedIndex = Array.from(starInputs).indexOf(checkedInput);
@@ -533,7 +531,8 @@
             showMessage('Mengirim...', 'info');
 
             // URL aplikasi web Google Apps Script Anda yang sebenarnya
-            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwO26gRBXJnR9Vxv3ksT06WSJ64kPENndJLbrDDEYdEjHzbFwa37_Erc353mcCKjRdZ/exec'; 
+            // Ini adalah URL yang baru Anda berikan: https://script.google.com/macros/s/AKfycby3KPlwKSyxSPxen8C30GNnhBZuaReThCghNgnHLlYT0QZ2QuuiZn-GMaSqdnS4A6xi/exec
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3KPlwKSyxSPxen8C30GNnhBZuaReThCghNgnHLlYT0QZ2QuuiZn-GMaSqdnS4A6xi/exec'; 
 
             // Buat objek FormData untuk pengiriman
             const formData = new FormData();
