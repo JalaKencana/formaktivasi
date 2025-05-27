@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Google Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Latar belakang bertekstur menggunakan gambar Unsplash */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1541701494587-f3131174620f?q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&ixid=M3wxMjA3fDB8MXxzZWFyY2h8Mnx8c3VidGxlJTIwZ3JlZW4lMjB0ZXh0dXJlfGVufDB8fHx8fDE3MTY3NTYwNjF8MA');
+            background-size: cover; /* Menutupi seluruh viewport */
+            background-position: center; /* Menempatkan gambar latar belakang di tengah */
+            background-attachment: fixed; /* Menjaga latar belakang tetap saat menggulir */
+            min-height: 100vh; /* Memastikan menutupi seluruh tinggi viewport */
+            display: flex;
+            flex-direction: column; /* Mengatur tata letak kolom untuk header dan formulir */
+            justify-content: center;
+            align-items: center;
+            padding: 1rem; /* Menambahkan padding untuk layar kecil */
+        }
+        /* Overlay gradien kustom untuk mempertahankan tema hijau dan keterbacaan */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right top, rgba(0, 123, 39, 0.7), rgba(0, 160, 64, 0.7), rgba(102, 255, 153, 0.7)); /* Overlay gradien hijau */
+            z-index: -1; /* Menempatkan di belakang konten */
+        }
+
+        /* Gaya kustom untuk kotak pesan */
+        .message-box {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background-color: #333;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+        .message-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Gaya untuk modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            animation: fadeInScale 0.3s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+
+        /* Animasi untuk gambar header */
+        .header-image-container {
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards; /* Animasi fade-in sederhana */
+            animation-delay: 0.2s; /* Sedikit penundaan untuk efek */
+            margin-bottom: 2rem; /* Memberi jarak antara header dan formulir */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Gaya kustom untuk input select dan tanggal */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-wrapper select {
+            appearance: none; /* Sembunyikan panah default */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #fff; /* Pastikan latar belakang putih */
+            padding-right: 2.5rem; /* Beri ruang untuk panah kustom */
+        }
+
+        .custom-select-wrapper::after {
+            content: '▼'; /* Karakter panah kustom (panah bawah Unicode) */
+            font-size: 0.75rem;
+            color: #007B27; /* Panah hijau */
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none; /* Izinkan klik melewati ke select */
+        }
+
+        /* Pastikan semua input memiliki sudut membulat dan fokus yang konsisten */
+        input[type="email"],
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #D1D5DB; /* border-gray-300 */
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            width: 100%; /* w-full */
+            outline: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* Gaya fokus untuk semua jenis input dan select yang relevan */
+        input[type="email"]:focus,
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #007B27; /* Gunakan hijau dominan untuk border */
+            box-shadow: 0 0 0 2px rgba(0, 123, 39, 0.5); /* Bayangan cincin hijau */
+        }
+    </style>
+</head>
+<body>
+    <div id="messageBox" class="message-box"></div>
+
+    <div id="tipsModal" class="modal">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeModal('tipsModal')">&times;</button>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Tips Penjagaan Gawai ✨</h3>
+            <div id="tipsContent" class="text-gray-700 leading-relaxed">
+                <p>Memuatkan tips...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="warrantyModal" class="modal">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeModal('warrantyModal')">&times;</button>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Ringkasan Faedah Garansi ✨</h3>
+            <div id="warrantyContent" class="text-gray-700 leading-relaxed">
+                <p>Memuatkan ringkasan garansi...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-image-container w-3/4"> 
+        <img 
+            src="https://i.imgur.com/97Q6ME9.png" 
+            onerror="this.onerror=null;this.src='https://placehold.co/800x200/007B27/FFFFFF?text=Jala+Kencana+Header';"
+            alt="Jala Kencana Header" 
+            class="w-full h-auto rounded-lg shadow-md"
+        >
+    </div>
+
+    <div class="w-3/4 bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Form Aktivasi dan Garansi Gawai - Jala Kencana</h2>
+        <p class="text-gray-600 mb-4 text-center"><i>Form untuk aktivasi garansi Gawai dengan pembelian di Jala Kencana Semarang</i></p>
+        <div class="text-gray-600 mb-8 text-center space-y-2">
+            <p><i>Socials</i></p>
+            <p><i>Instagram </i><span role="img" aria-label="Instagram">🅾</span></p>
+            <p><a href="https://www.instagram.com/jalakencanasemarang?igsh=MXJ0amxib2M2MnMydg==" class="text-[#007B27] hover:underline">Jala Kencana Semarang</a></p>
+            <p><a href="https://www.instagram.com/jalakencana.daily?igsh=MXRseXlscDFqbmFjNg==" class="text-[#007B27] hover:underline">Jala Kencana Daily (Giveaway Rutin)</a></p>
+            <p><i>Tiktok ♪ </i></p>
+            <p><a href="https://www.tiktok.com/@jalakencanasemarang?_t=ZS-8vw1h7YzqyO&_r=1" class="text-[#007B27] hover:underline">Jala Kencana</a></p>
+            <p>- Jala Kencana Semarang (Arya)</p>
+        </div>
+
+
+        <form id="customGoogleForm" class="w-full space-y-5">
+            <input type="hidden" id="person_identifier" name="personIdentifier" value="PLACEHOLDER_PERSON_IDENTIFIER">
+            <input type="hidden" id="frontliner_name" name="frontlinerName">
+            <div>
+                <label for="email_address" class="block text-gray-700 text-sm font-medium mb-1">Email</label>
+                <input
+                    type="email"
+                    id="email_address"
+                    name="emailAddress"  placeholder="your.email@example.com"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+            
+            <div class="mt-8 mb-4 w-full">
+                <h3 class="text-2xl font-bold text-gray-800 text-center">Device Specification</h3>
+                <p class="text-gray-600 text-center italic">Diisi Oleh Petugas</p>
+            </div>
+
+            <div>
+                <label for="question_tanggal_pembelian" class="block text-gray-700 text-sm font-medium mb-1">Tanggal Pembelian</label>
+                <input
+                    type="date" id="question_tanggal_pembelian"
+                    name="tanggalPembelian" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+
+            <div>
+                <label for="question_brand" class="block text-gray-700 text-sm font-medium mb-1">Brand</label>
+                <div class="custom-select-wrapper">
+                    <select
+                        id="question_brand"
+                        name="brand" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required
+                    >
+                        <option value="">Pilih Merek</option>
+                        <option value="Samsung">Samsung</option>
+                        <option value="Xiaomi">Xiaomi</option>
+                        <option value="Redmi">Redmi</option>
+                        <option value="Oppo">Oppo</option>
+                        <option value="Realme">Realme</option>
+                        <option value="Vivo">Vivo</option>
+                        <option value="Tecno">Tecno</option>
+                        <option value="Evercoss">Evercoss</option>
+                        <option value="Itel">Itel</option>
+                        <option value="Infinix">Infinix</option>
+                        <option value="Iphone">Iphone</option>
+                        <option value="__other_option__">Lainnya</option>
+                    </select>
+                </div>
+                <input
+                    type="text"
+                    id="other_brand_input"
+                    name="otherBrand" placeholder="Sebutkan merek lain"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mt-2 hidden"
+                >
+            </div>
+
+            <div>
+                <label for="question_type" class="block text-gray-700 text-sm font-medium mb-1">Jenis</label>
+                <input
+                    type="text"
+                    id="question_type"
+                    name="type" placeholder="contoh: Smartphone, Tablet, Laptop"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+
+            <div>
+                <label for="question_ram_rom" class="block text-gray-700 text-sm font-medium mb-1">Ram/Rom</label>
+                <input
+                    type="text"
+                    id="question_ram_rom"
+                    name="ramRom" placeholder="contoh: 8GB/128GB"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+
+            <div>
+                <label for="question_bonus" class="block text-gray-700 text-sm font-medium mb-1">Bonus (jika ada)</label>
+                <input
+                    type="text"
+                    id="question_bonus"
+                    name="bonus" placeholder="contoh: Pelindung layar, Casing"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+            </div>
+
+            <div>
+                <label for="question_retail_price" class="block text-gray-700 text-sm font-medium mb-1">Harga Eceran</label>
+                <input
+                    type="text"
+                    id="question_retail_price"
+                    name="retailPrice" placeholder="contoh: Rp 5.000.000"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+
+            <div class="mt-8 mb-4 w-full">
+                <h3 class="text-2xl font-bold text-gray-800 text-center">Data Diri</h3>
+                <p class="text-gray-600 text-center italic">Diisi Oleh Pengguna (dapat dibantu oleh petugas)</p>
+            </div>
+
+            <div>
+                <label for="question_nama_lengkap" class="block text-gray-700 text-sm font-medium mb-1">Nama Lengkap</label>
+                <input
+                    type="text"
+                    id="question_nama_lengkap"
+                    name="namaLengkap" placeholder="Nama Lengkap Anda"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+
+            <div>
+                <label for="question_nomor_hp_aktif" class="block text-gray-700 text-sm font-medium mb-1">Nomor HP Aktif</label>
+                <input
+                    type="text"
+                    id="question_nomor_hp_aktif"
+                    name="nomorHpAktif" placeholder="contoh: 081234567890"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+
+            <div>
+                <label for="question_tempat_tanggal_lahir" class="block text-gray-700 text-sm font-medium mb-1">Tempat dan Tanggal Lahir</label>
+                <input
+                    type="date"
+                    id="question_tempat_tanggal_lahir"
+                    name="tempatTanggalLahir" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                >
+            </div>
+
+            <div class="mt-8 mb-4 w-full">
+                <h3 class="text-2xl font-bold text-gray-800 text-center">Penilaian Pelayanan</h3>
+            </div>
+            <div class="w-full flex justify-center space-x-4" id="ratingContainer">
+                <label class="flex flex-col items-center cursor-pointer group">
+                    <input type="radio" name="penilaianPelayanan" value="1" class="hidden peer" required> <svg class="star-icon h-8 w-8 text-gray-400 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.929 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                    </svg>
+                </label>
+                <label class="flex flex-col items-center cursor-pointer group">
+                    <input type="radio" name="penilaianPelayanan" value="2" class="hidden peer"> <svg class="star-icon h-8 w-8 text-gray-400 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.929 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                    </svg>
+                </label>
+                <label class="flex flex-col items-center cursor-pointer group">
+                    <input type="radio" name="penilaianPelayanan" value="3" class="hidden peer"> <svg class="star-icon h-8 w-8 text-gray-400 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.929 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                    </svg>
+                </label>
+                <label class="flex flex-col items-center cursor-pointer group">
+                    <input type="radio" name="penilaianPelayanan" value="4" class="hidden peer"> <svg class="star-icon h-8 w-8 text-gray-400 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.929 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                    </svg>
+                </label>
+                <label class="flex flex-col items-center cursor-pointer group">
+                    <input type="radio" name="penilaianPelayanan" value="5" class="hidden peer"> <svg class="star-icon h-8 w-8 text-gray-400 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.929 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                    </svg>
+                </label>
+            </div>
+
+            <div>
+                <label for="question_kritik_saran" class="block text-gray-700 text-sm font-medium mb-1">Kritik dan Saran</label>
+                <textarea
+                    id="question_kritik_saran"
+                    name="kritikSaran" placeholder="Masukkan kritik dan saran Anda di sini..."
+                    rows="4"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                ></textarea>
+            </div>
+
+
+            <button
+                type="submit"
+                class="w-full bg-[#007B27] hover:bg-[#005F1F] text-white font-semibold py-3 rounded-lg transition duration-300 ease-in-out shadow-lg transform hover:scale-105"
+            >
+                Kirim Formulir
+            </button>
+
+            <button
+                type="button"
+                id="getTipsButton"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-300 ease-in-out shadow-lg transform hover:scale-105 mt-4"
+            >
+                Dapatkan Tips Penjagaan Gawai ✨
+            </button>
+            <button
+                type="button"
+                id="getWarrantyButton"
+                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition duration-300 ease-in-out shadow-lg transform hover:scale-105 mt-4"
+            >
+                Dapatkan Ringkasan Garansi ✨
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Fungsi untuk menampilkan pesan sementara
+        function showMessage(message, type = 'info') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = 'message-box show'; // Atur ulang kelas dan tampilkan
+            if (type === 'error') {
+                messageBox.style.backgroundColor = '#dc3545'; // Merah untuk error
+            } else if (type === 'success') {
+                messageBox.style.backgroundColor = '#28a745'; // Hijau untuk sukses
+            } else {
+                messageBox.style.backgroundColor = '#333'; // Default
+            }
+
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000); // Sembunyikan setelah 3 detik
+        }
+
+        // Fungsi untuk membuka modal tertentu
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('show');
+        }
+
+        // Fungsi untuk menutup modal tertentu
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        // Fungsi untuk mendapatkan parameter dari URL
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        };
+
+        // JavaScript untuk efek hover peringkat bintang
+        // Pindahkan deklarasi variabel ke sini agar tidak terjadi deklarasi ganda
+        const ratingContainer = document.getElementById('ratingContainer');
+        const starLabels = ratingContainer.querySelectorAll('label');
+        const starInputs = ratingContainer.querySelectorAll('input[type="radio"]');
+
+        starLabels.forEach((label, index) => {
+            label.addEventListener('mouseover', () => {
+                highlightStars(index);
+            });
+        });
+
+        ratingContainer.addEventListener('mouseout', () => {
+            const checkedInput = document.querySelector('input[name="penilaianPelayanan"]:checked'); 
+            if (!checkedInput) {
+                clearHighlights();
+            } else {
+                const checkedIndex = Array.from(starInputs).indexOf(checkedInput);
+                highlightStars(checkedIndex);
+            }
+        });
+
+        function highlightStars(hoveredIndex) {
+            starLabels.forEach((label, index) => {
+                const svg = label.querySelector('.star-icon');
+                if (index <= hoveredIndex) {
+                    svg.classList.add('text-yellow-400');
+                    svg.classList.remove('text-gray-400');
+                } else {
+                    svg.classList.remove('text-yellow-400');
+                    svg.classList.add('text-gray-400');
+                }
+            });
+        }
+
+        function clearHighlights() {
+            starLabels.forEach((label, index) => {
+                const svg = label.querySelector('.star-icon');
+                svg.classList.remove('text-yellow-400');
+                svg.classList.add('text-gray-400');
+            });
+        }
+
+        starInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                const checkedInput = document.querySelector('input[name="penilaianPelayanan"]:checked'); 
+                if (checkedInput) {
+                    const checkedIndex = Array.from(starInputs).indexOf(checkedInput);
+                    highlightStars(checkedIndex);
+                }
+            }); 
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ambil nama frontliner dari URL dan isi input tersembunyi
+            const frontlinerName = getUrlParameter('frontliner');
+            if (frontlinerName) {
+                document.getElementById('frontliner_name').value = frontlinerName;
+            }
+
+            // Inisialisasi tampilan berdasarkan tombol radio yang sudah dicentang (jika ada)
+            // Variabel ratingContainer, starLabels, dan starInputs sudah dideklarasikan di luar.
+            const checkedInput = document.querySelector('input[name="penilaianPelayanan"]:checked'); 
+            if (checkedInput) {
+                const checkedIndex = Array.from(starInputs).indexOf(checkedInput);
+                highlightStars(checkedIndex);
+            }
+        });
+
+        document.getElementById('customGoogleForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Mencegah pengiriman formulir default
+
+            showMessage('Mengirim...', 'info');
+
+            // URL aplikasi web Google Apps Script Anda yang sebenarnya
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwO26gRBXJnR9Vxv3ksT06WSJ64kPENndJLbrDDEYdEjHzbFwa37_Erc353mcCKjRdZ/exec'; 
+
+            // Buat objek FormData untuk pengiriman
+            const formData = new FormData();
+
+            // Tambahkan nilai setiap bidang menggunakan nama baru yang disederhanakan untuk Apps Script
+            formData.append('emailAddress', document.getElementById('email_address').value); 
+            
+            // Tanggal Pembelian (dikirim sebagai string berperformat ISO 8601:YYYY-MM-DD)
+            formData.append('tanggalPembelian', document.getElementById('question_tanggal_pembelian').value);
+
+            // Merek
+            const brandSelect = document.getElementById('question_brand');
+            const otherBrandInput = document.getElementById('other_brand_input');
+            if (brandSelect.value === '__other_option__') {
+                formData.append('brand', otherBrandInput.value); 
+            } else {
+                formData.append('brand', brandSelect.value); 
+            }
+
+            // Jenis
+            formData.append('type', document.getElementById('question_type').value); 
+            
+            // Ram/Rom
+            formData.append('ramRom', document.getElementById('question_ram_rom').value); 
+            
+            // Bonus
+            formData.append('bonus', document.getElementById('question_bonus').value); 
+            
+            // Harga Eceran
+            formData.append('retailPrice', document.getElementById('question_retail_price').value); 
+
+            // Nama Lengkap
+            formData.append('namaLengkap', document.getElementById('question_nama_lengkap').value); 
+            
+            // Nomor HP Aktif
+            formData.append('nomorHpAktif', document.getElementById('question_nomor_hp_aktif').value); 
+            
+            // Tempat dan Tanggal Lahir
+            formData.append('tempatTanggalLahir', document.getElementById('question_tempat_tanggal_lahir').value); 
+            
+            // Penilaian Pelayanan
+            const selectedRating = document.querySelector('input[name="penilaianPelayanan"]:checked');
+            if (selectedRating) {
+                formData.append('penilaianPelayanan', selectedRating.value); 
+            }
+
+            // Kritik dan Saran
+            formData.append('kritikSaran', document.getElementById('question_kritik_saran').value); 
+
+            // Tambahkan pengenal unik untuk setiap formulir
+            formData.append('personIdentifier', document.getElementById('person_identifier').value);
+            // Tambahkan nama frontliner dari bidang tersembunyi
+            formData.append('frontlinerName', document.getElementById('frontliner_name').value);
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors', 
+                    body: JSON.stringify(Object.fromEntries(formData)), // Mengubah FormData menjadi objek JSON
+                    headers: {
+                        'Content-Type': 'application/json' // Menentukan Content-Type sebagai JSON
+                    }
+                });
+
+                const result = await response.json(); 
+
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    this.reset();
+                    clearHighlights();
+                } else {
+                    showMessage(result.message || 'Terjadi kesalahan saat mengirim formulir.', 'error');
+                    console.error('Struktur respons API tidak terduga:', result);
+                }
+
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                showMessage('Error saat mengirim formulir. Silakan coba lagi.', 'error');
+            }
+        });
+
+        // Tampilkan/sembunyikan bidang input "Lainnya" berdasarkan pilihan dropdown
+        document.getElementById('question_brand').addEventListener('change', function() {
+            const otherBrandInput = document.getElementById('other_brand_input');
+            if (this.value === '__other_option__') {
+                otherBrandInput.classList.remove('hidden');
+                otherBrandInput.setAttribute('required', 'true');
+            } else {
+                otherBrandInput.classList.add('hidden');
+                otherBrandInput.removeAttribute('required');
+                otherBrandInput.value = ''; // Hapus nilai saat disembunyikan
+            }
+        });
+
+        // Integrasi LLM: Dapatkan Tips Penjagaan Gawai
+        document.getElementById('getTipsButton').addEventListener('click', async function() {
+            const brand = document.getElementById('question_brand').value;
+            const type = document.getElementById('question_type').value;
+            const otherBrand = document.getElementById('other_brand_input').value;
+
+            // Gunakan merek "lainnya" jika dipilih, jika tidak gunakan nilai dropdown
+            const finalBrand = brand === '__other_option__' ? otherBrand : brand;
+
+            if (!finalBrand || !type) {
+                showMessage('Silakan masukkan Merek dan Jenis Gawai untuk mendapatkan tips.', 'error');
+                return;
+            }
+
+            openModal('tipsModal'); // Buka modal tips
+            document.getElementById('tipsContent').innerHTML = '<p>Memuatkan tips...</p>'; // Tampilkan pesan memuat
+
+            try {
+                let chatHistory = [];
+                const prompt = `Berikan 5 tips penjagaan ringkas untuk gawai merek ${finalBrand} jenis ${type}. Fokus pada tips umum yang relevan untuk penggunaan harian dan jangka hayat baterai. Formatkan sebagai daftar berbulet.`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // Canvas akan menyediakan ini saat runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json(); 
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    // Format tips untuk ditampilkan (misalnya, konversi daftar markdown ke daftar HTML)
+                    const formattedTips = text.split('\n').map(line => {
+                        if (line.startsWith('* ')) {
+                            return `<li>${line.substring(2)}</li>`;
+                        }
+                        return line;
+                    }).join('');
+                    document.getElementById('tipsContent').innerHTML = `<ul>${formattedTips}</ul>`;
+                } else {
+                    document.getElementById('tipsContent').innerHTML = '<p>Maaf, tidak dapat menjana tips penjagaan gawai. Silakan coba lagi.</p>';
+                    console.error('Struktur respons API tidak terduga:', result);
+                }
+            } catch (error) {
+                document.getElementById('tipsContent').innerHTML = '<p>Kesalahan menjana tips penjagaan gawai. Silakan periksa sambungan internet Anda.</p>';
+                console.error('Error fetching tips:', error);
+            }
+        });
+
+        // Integrasi LLM: Dapatkan Ringkasan Garansi
+        document.getElementById('getWarrantyButton').addEventListener('click', async function() {
+            const brand = document.getElementById('question_brand').value;
+            const type = document.getElementById('question_type').value;
+            const otherBrand = document.getElementById('other_brand_input').value;
+
+            // Gunakan merek "lainnya" jika dipilih, jika tidak gunakan nilai dropdown
+            const finalBrand = brand === '__other_option__' ? otherBrand : brand;
+
+            if (!finalBrand || !type) {
+                showMessage('Silakan masukkan Merek dan Jenis Gawai untuk mendapatkan ringkasan garansi.', 'error');
+                return;
+            }
+
+            openModal('warrantyModal'); // Buka modal garansi
+            document.getElementById('warrantyContent').innerHTML = '<p>Memuatkan ringkasan garansi...</p>'; // Tampilkan pesan memuat
+
+            try {
+                let chatHistory = [];
+                const prompt = `Ringkaskan secara ringkas faedah garansi biasa untuk gawai merek ${finalBrand} jenis ${type}. Sertakan informasi tentang periode garansi standar dan jenis masalah yang biasanya dilindungi. Formatkan sebagai daftar berbulet.`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // Canvas akan menyediakan ini saat runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json(); 
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    // Format ringkasan untuk ditampilkan (misalnya, konversi daftar markdown ke daftar HTML)
+                    const formattedSummary = text.split('\n').map(line => {
+                        if (line.startsWith('* ') ) {
+                            return `<li>${line.substring(2)}</li>`;
+                        }
+                        return line;
+                    }).join('');
+                    document.getElementById('warrantyContent').innerHTML = `<ul>${formattedSummary}</ul>`;
+                } else {
+                    document.getElementById('warrantyContent').innerHTML = '<p>Maaf, tidak dapat menjana ringkasan garansi. Silakan coba lagi.</p>';
+                    console.error('Struktur respons API tidak terduga:', result);
+                }
+            } catch (error) {
+                document.getElementById('warrantyContent').innerHTML = '<p>Kesalahan menjana ringkasan garansi. Silakan periksa sambungan internet Anda.</p>';
+                console.error('Error fetching warranty summary:', error);
+            }
+        });
+    </script>
+</body>
+</html>

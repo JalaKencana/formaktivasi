@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilih Frontliner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1541701494587-f3131174620f?q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&ixid=M3wxMjA3fDB8MXxzZWFyY2h8Mnx8c3VidGxlJTIwZ3JlZW4lMjB0ZXh0dXJlfHwwfHx8fDE3MTY3NTYwNjF8MA');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right top, rgba(0, 123, 39, 0.7), rgba(0, 160, 64, 0.7), rgba(102, 255, 153, 0.7));
+            z-index: -1;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 400px; /* Lebar maksimal agar tidak terlalu lebar */
+        }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #fff;
+            padding-right: 2.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #D1D5DB;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s ease-in-out;
+            margin-top: 0.5rem;
+        }
+        select:focus {
+            border-color: #007B27;
+            box-shadow: 0 0 0 2px rgba(0, 123, 39, 0.5);
+        }
+        .custom-select-wrapper::after {
+            content: '▼';
+            font-size: 0.75rem;
+            color: #007B27;
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Pilih Frontliner</h2>
+        <p class="text-gray-600 mb-6">Silakan pilih nama Anda untuk melanjutkan ke formulir aktivasi garansi.</p>
+
+        <div class="custom-select-wrapper mb-6">
+            <select id="frontlinerSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                <option value="" disabled selected>-- Pilih Nama Anda --</option>
+                <option value="Frontliner1">Frontliner 1</option>
+                <option value="Frontliner2">Frontliner 2</option>
+                <option value="Frontliner3">Frontliner 3</option>
+                <option value="Frontliner4">Frontliner 4</option>
+                <option value="Frontliner5">Frontliner 5</option>
+                <option value="Frontliner6">Frontliner 6</option>
+                <option value="Frontliner7">Frontliner 7</option>
+                <option value="Frontliner8">Frontliner 8</option>
+                <option value="Frontliner9">Frontliner 9</option>
+                <option value="Frontliner10">Frontliner 10</option>
+            </select>
+        </div>
+
+        <button
+            id="continueButton"
+            class="w-full bg-[#007B27] hover:bg-[#005F1F] text-white font-semibold py-3 rounded-lg transition duration-300 ease-in-out shadow-lg transform hover:scale-105"
+        >
+            Lanjutkan ke Formulir
+        </button>
+    </div>
+
+    <script>
+        document.getElementById('continueButton').addEventListener('click', function() {
+            const selectedFrontliner = document.getElementById('frontlinerSelect').value;
+            if (selectedFrontliner) {
+                // GANTI DENGAN URL PUBLIK DARI FORMULIR UTAMA ANDA (misalnya, form.html)
+                // Contoh: 'https://your-github-username.github.io/my-form-project/form.html'
+                const formUrl = 'URL_PUBLIK_FORMULIR_UTAMA_ANDA_DI_SINI'; 
+                
+                window.location.href = `${formUrl}?frontliner=${selectedFrontliner}`;
+            } else {
+                // Menggunakan modal kustom sebagai pengganti alert()
+                const messageBox = document.getElementById('messageBox');
+                if (!messageBox) {
+                    // Jika messageBox belum ada, buat satu (untuk pengujian atau fallback)
+                    const tempMessageBox = document.createElement('div');
+                    tempMessageBox.id = 'messageBox';
+                    tempMessageBox.className = 'message-box show';
+                    tempMessageBox.style.backgroundColor = '#dc3545'; // Merah untuk error
+                    tempMessageBox.textContent = 'Harap pilih nama frontliner terlebih dahulu.';
+                    document.body.appendChild(tempMessageBox);
+                    setTimeout(() => {
+                        tempMessageBox.classList.remove('show');
+                        tempMessageBox.remove();
+                    }, 3000);
+                } else {
+                    // Jika messageBox sudah ada, gunakan fungsi showMessage yang mungkin sudah didefinisikan
+                    if (typeof showMessage === 'function') {
+                        showMessage('Harap pilih nama frontliner terlebih dahulu.', 'error');
+                    } else {
+                        // Fallback jika showMessage tidak ada
+                        messageBox.textContent = 'Harap pilih nama frontliner terlebih dahulu.';
+                        messageBox.className = 'message-box show';
+                        messageBox.style.backgroundColor = '#dc3545';
+                        setTimeout(() => {
+                            messageBox.classList.remove('show');
+                        }, 3000);
+                    }
+                }
+            }
+        });
+    </script>
+    <div id="messageBox" class="message-box"></div>
+</body>
+</html>
